@@ -336,6 +336,14 @@ Object.assign(STR.en,{readyT:'Ready for the next call',readyTF:'Ready for the ne
   readyB:'The Co-Pilot listens to the call, identifies the customer and guides you in real time, based on company procedures.'});
 Object.assign(STR.he,{readyT:'מוכן לשיחה הבאה',readyTF:'מוכנה לשיחה הבאה',
   readyB:'ה-Co-Pilot מקשיב לשיחה, מזהה את הלקוח ומדריך אותך בזמן אמת לפי נוהלי החברה.'});
+Object.assign(STR.en,{fResolved:'Resolved',fUnresolved:'Unresolved',fTransferred:'Transferred',sortBy:'Sort',
+  sNew:'Newest first',sOld:'Oldest first',sLong:'Longest first',sCsat:'Lowest satisfaction first',sortAsc:'ascending',sortDesc:'descending'});
+Object.assign(STR.he,{fResolved:'נפתר',fUnresolved:'לא נפתר',fTransferred:'הועבר',sortBy:'מיון',
+  sNew:'מהחדשה לישנה',sOld:'מהישנה לחדשה',sLong:'הארוכות קודם',sCsat:'שביעות רצון נמוכה קודם',sortAsc:'סדר עולה',sortDesc:'סדר יורד'});
+Object.assign(STR.en,{endCallFirstT:'A call is in progress',endCallFirstB:'Finish the current call first, then search.'});
+Object.assign(STR.he,{endCallFirstT:'יש שיחה פעילה',endCallFirstB:'סיימו קודם את השיחה הנוכחית ואז חפשו.'});
+Object.assign(STR.en,{colDate:'Date',colTime:'Time',colTopic:'Topic',colQueue:'Queue',colCust:'Customer',colAgent:'Agent',colDur:'Length',colCsat:'Satisfaction',colRes:'Result',colQa:'Procedures'});
+Object.assign(STR.he,{colDate:'תאריך',colTime:'שעה',colTopic:'נושא',colQueue:'תור',colCust:'לקוח',colAgent:'נציג',colDur:'אורך',colCsat:'שביעות רצון',colRes:'תוצאה',colQa:'נהלים'});
 function useT(){const lang=useContext(LangCtx);const t=(k,...a)=>{const v=STR[lang][k]??STR.en[k];return typeof v==='function'?v(...a):v};
   const tr=(map,v)=>lang==='he'?(map[v]||v):v; return {t,lang,he:lang==='he',topic:v=>tr(TOPIC_HE,v),queue:v=>tr(QUEUE_HE,v),flag:v=>tr(FLAG_HE,v),check:v=>tr(CHECK_HE,v)};}
 const pick=(he,obj,key)=>he&&obj[key+'He']!==undefined?obj[key+'He']:obj[key];
@@ -943,13 +951,20 @@ function BreachBanner({callId,time,done}){
   </div>;
 }
 
-function CustSearch({onResult}){
+function CustSearch({onResult,nav}){
   const {t}=useT(); const api=useApi();
   const [v,setV]=useState(''); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false);
   const run=async e=>{e.preventDefault();if(!parseCustomerId(v)){setErr(t('searchErr'));return}
     setErr('');setBusy(true);
     try{onResult(await findCustomer(api,v))}catch(x){setErr(apiErrText(t,x))}
     setBusy(false)};
+  if(nav) return <form onSubmit={run} role="search" className="relative">
+    <span className="absolute top-1/2 -translate-y-1/2 start-2.5 pointer-events-none" style={{color:'var(--navmuted)'}}><Ic n="Search" size={14}/></span>
+    <input value={v} onChange={e=>{setV(e.target.value);setErr('')}} placeholder={t('custPh')} aria-label={t('custSearch')} title={t('custSearch')} autoComplete="off" spellCheck={false} aria-invalid={!!err}
+      className="mono w-[210px] rounded-lg ps-8 pe-8 py-1.5 text-[13px] text-white placeholder:text-[var(--navmuted)] focus:outline-none" style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)'}}/>
+    {busy&&<span className="absolute top-1/2 -translate-y-1/2 end-2.5" style={{color:'var(--navmuted)'}}><Ic n="LoaderCircle" size={14} className="animate-spin"/></span>}
+    {err&&<span role="alert" className="absolute top-full mt-1.5 start-0 z-50 whitespace-nowrap rounded-md bg-card border border-line px-2 py-1 text-xs text-bad shadow-sm">{err}</span>}
+  </form>;
   return <form onSubmit={run} role="search" className="flex flex-wrap items-center gap-2">
     <label htmlFor="cust" className="lbl whitespace-nowrap">{t('custSearch')}</label>
     <div className="relative">
@@ -1263,7 +1278,7 @@ function ReadyCall({user,demo,setDemo,answer,answering}){
   </div>;
 }
 
-function AgentWorkspace({user,callId,setCallId,toast,openReq}){
+function AgentWorkspace({user,callId,setCallId,toast,openReq,searchReq}){
   const {t,he,queue,topic}=useT();
   const [notes,setNotes]=useState('compact');
   const [mine,setMine]=useState(true); /* home: agents land on the ready screen, the manager on all calls */ const [live,setLive]=useState(null); const [demo,setDemo]=useState('random');
@@ -1300,11 +1315,11 @@ function AgentWorkspace({user,callId,setCallId,toast,openReq}){
     catch(e){toast({tone:'err',title:t('crmTitle'),body:apiErrText(t,e)})}
     finally{setOpening(false)}};
   const isNew=mode!=='tx';
+  useLayoutEffect(()=>{if(!searchReq)return; if(live){toast({tone:'err',title:t('endCallFirstT'),body:t('endCallFirstB')});return} onResult(searchReq.r)},[searchReq&&searchReq.n]); // a search from the top bar
   useLayoutEffect(()=>{if(openReq){setLive(null);openRow(openReq.row)}},[openReq&&openReq.n]); // before paint, so the previous call never flashes // a call opened from another screen
   if(live) return <LiveCallView key={live.run} live={live} user={user} toast={toast} onClose={()=>setLive(null)}/>;
   return <div className="space-y-4">
     <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-      <CustSearch onResult={onResult}/>
       {mode!=='mine'&&<button onClick={()=>{setMine(true);setRes(null)}} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold hover:bg-sunken"><Ic n="ChevronLeft" size={15} className="rtl:-scale-x-100"/>{user.role==='manager'?t('allCalls'):t('myCalls')}</button>}
       {user.role!=='manager'&&mode!=='mine'&&<div className="flex flex-wrap items-center gap-2 ms-auto">
         <label htmlFor="demo" className="lbl whitespace-nowrap">{t('demoScen')}</label>
@@ -1745,7 +1760,11 @@ function TeamView({user,onOpenCall}){
   const teamRows=useMemo(()=>ROWS.filter(r=>r.team===team),[team]);
   const agents=useMemo(()=>[...new Set(teamRows.map(r=>r.agent))].sort(),[teamRows]);
   const tm=agentStats(teamRows);
-  const rows=useMemo(()=>agents.map(a=>({a,s:agentStats(teamRows.filter(r=>r.agent===a)),nl:logs.filter(l=>l.agent===a).length})),[agents,teamRows,logs]);
+  const [sk,setSk]=useState('a'); const [sd,setSd]=useState(1); // sort key and direction (1 = ascending)
+  const rows=useMemo(()=>{const l=agents.map(a=>({a,s:agentStats(teamRows.filter(r=>r.agent===a)),nl:logs.filter(l=>l.agent===a).length}));
+    const v=x=>sk==='a'?x.a:sk==='nl'?x.nl:(x.s[sk]==null?-Infinity:x.s[sk]);
+    return l.sort((x,y)=>{const a=v(x),b=v(y);return (a<b?-1:a>b?1:0)*sd})},[agents,teamRows,logs,sk,sd]);
+  const sortBy=k=>{if(k===sk)setSd(-sd);else{setSk(k);setSd(k==='a'?1:-1)}};
   useEffect(()=>{window.scrollTo(0,0)},[sel]);
   if(sel){
     const u={id:sel,role:'agent',name:AGENT_NAMES[sel]||{en:sel,he:sel},f:AGENT_NAMES[sel]?.f,team};
@@ -1764,7 +1783,8 @@ function TeamView({user,onOpenCall}){
     </div>
     <Card title={t('teamAgents')} icon="Users" bodyClass="p-0">
       <div className="overflow-x-auto scroll-thin"><table className="w-full text-sm min-w-[720px]">
-        <thead><tr className="text-xs text-muted border-b border-line bg-sunken">{[t('agent'),t('calls'),t('kCsat'),t('pfFcr'),t('pfOffer'),t('pfAht'),t('newLogs'),''].map((h,i)=><th key={i} className={th}>{h}</th>)}</tr></thead>
+        <thead><tr className="text-xs text-muted border-b border-line bg-sunken">{[['a',t('agent')],['n',t('calls')],['csat',t('kCsat')],['fcr',t('pfFcr')],['offerP',t('pfOffer')],['aht',t('pfAht')],['nl',t('newLogs')],[null,'']].map(([k,h],i)=><th key={i} className={th} aria-sort={k&&k===sk?(sd>0?'ascending':'descending'):undefined}>
+          {k?<button onClick={()=>sortBy(k)} title={t('sortBy')} className={`inline-flex items-center gap-1 font-semibold hover:text-ink ${k===sk?'text-ink':''}`}>{h}<Ic n={k===sk?(sd>0?'ArrowUp':'ArrowDown'):'ArrowUpDown'} size={12} className={k===sk?'':'opacity-40'}/></button>:h}</th>)}</tr></thead>
         <tbody>
           {rows.map(({a,s,nl})=><tr key={a} onClick={()=>setSel(a)} tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')setSel(a)}} className="border-b border-line hover:bg-sunken cursor-pointer">
             <td className="px-3 py-2 whitespace-nowrap"><span className="mono font-medium">{a}</span>{AGENT_NAMES[a]&&<span className="text-muted"> · {AGENT_NAMES[a][lang]}</span>}</td>
@@ -1794,6 +1814,7 @@ function MyCalls({user,onOpen,fixedAgent}){
   const qa=role==='manager'; // the manager's call review doubles as the quality-review list
   const [per,setPer]=useState('30'); const [cf,setCf]=useState(DATA_START); const [ct,setCt]=useState(DATA_END);
   const [tm,setTm]=useState('all'); const [st,setSt]=useState('all'); const [ft,setFt]=useState('all'); const [aq,setAq]=useState('');
+  const [qu,setQu]=useState('all'); const [oc,setOc]=useState('all'); const [sk,setSk]=useState('time'); const [sd,setSd]=useState(-1); // sort column and direction (1 = ascending)
   const range=periodRange(per,cf,ct);
   const [scope,setScope]=useState(role==='manager'?'all':role==='lead'?'team':'mine'); const [onlyTx,setOnlyTx]=useState(false); const [page,setPage]=useState(0);
   const loggedIds=useMemo(()=>new Set(logs.map(l=>l.call_id)),[logs]);
@@ -1801,44 +1822,58 @@ function MyCalls({user,onOpen,fixedAgent}){
     const match=r=>scope==='all'||(scope==='mine'?r.agent===user.id:r.team===user.team);
     const s=aq.trim().toLowerCase();
     const qaOk=r=>!qa||((tm==='all'||r.team===tm)&&(!s||(r.agent||'').toLowerCase()===s||String(r.id||r.call_id||'').includes(s)||(r.cust||'').toLowerCase().includes(s)));
-    const base=ROWS.filter(r=>match(r)&&qaOk(r)&&(!onlyTx||JOBS[r.id])&&(!qa||((st==='all'||r.status===st)&&(ft==='all'||r.flags.some(f=>f[1]===ft))&&rowDay(r)>=range.from&&rowDay(r)<=range.to)));
-    // calls logged in this session have no QA status yet; hide them once a status or flag filter is set
-    const fresh=onlyTx||(qa&&(st!=='all'||ft!=='all'))?[]:logs.filter(l=>l.isNew&&match(l)&&qaOk(l)).map(l=>({id:l.call_id,time:l.time,agent:l.agent,team:l.team,cust:l.cust,res:l.resolved?1:0,tr:0,isNew:true,reason:l.reason_code}));
-    return [...fresh,...base].sort((a,b)=>b.time.localeCompare(a.time));
-  },[scope,onlyTx,user.id,user.team,logs,qa,tm,st,ft,aq,range.from,range.to]);
-  useEffect(()=>setPage(0),[scope,onlyTx,tm,st,ft,aq,range.from,range.to]);
+    const ocOk=r=>oc==='all'||(oc==='res'?r.res===1:oc==='unres'?r.res!==1:r.tr===1);
+    const base=ROWS.filter(r=>match(r)&&qaOk(r)&&ocOk(r)&&(qu==='all'||r.queue===qu)&&(!onlyTx||JOBS[r.id])&&(!qa||(rowDay(r)>=range.from&&rowDay(r)<=range.to))&&(!qa||((st==='all'||r.status===st)&&(ft==='all'||r.flags.some(f=>f[1]===ft)))));
+    // calls logged in this session have no queue or QA status; hide them once one of those filters is set
+    const fresh=onlyTx||qu!=='all'||(qa&&(st!=='all'||ft!=='all'))?[]:logs.filter(l=>l.isNew&&match(l)&&qaOk(l)).map(l=>({id:l.call_id,time:l.time,agent:l.agent,team:l.team,cust:l.cust,res:l.resolved?1:0,tr:0,isNew:true,reason:l.reason_code})).filter(ocOk);
+    // calls without a value (no survey, a call logged just now) always go last
+    const val=r=>sk==='time'?r.time:sk==='dur'?(r.dur||null):sk==='csat'?(r.csat>0?r.csat:null):sk==='res'?r.res:sk==='qa'?({violation:2,warning:1,passed:0}[r.status]??null):(r[sk]||null);
+    return [...fresh,...base].sort((a,b)=>{const x=val(a),y=val(b);if(x==null||y==null)return (x==null)-(y==null);return ((x<y?-1:x>y?1:0)*sd)||b.time.localeCompare(a.time)});
+  },[scope,onlyTx,user.id,user.team,logs,qa,tm,st,ft,aq,qu,oc,sk,sd,range.from,range.to]);
+  useEffect(()=>setPage(0),[scope,onlyTx,tm,st,ft,aq,qu,oc,sk,sd,range.from,range.to]);
+  const sortBy=k=>{if(k===sk)setSd(-sd);else{setSk(k);setSd(['time','dur','qa'].includes(k)?-1:1)}};
+  const showAgent=scope!=='mine'||qa;
+  const dmy=s=>`${+s.slice(3,5)}.${+s.slice(0,2)}`; // "09-30 18:53" -> 30.9
   const PER=15, pages=Math.max(1,Math.ceil(list.length/PER)), rows=list.slice(page*PER,page*PER+PER);
   const title=fixedAgent?t('agentCalls',user.name[lang]):scope==='mine'?t('myCalls'):scope==='team'?t('teamCalls',user.team):t('allCalls');
   return <Card title={title} icon="ListTree" bodyClass="p-0">
-    {qa&&<div className="space-y-2.5 px-4 py-3 border-b border-line">
-      <PeriodFilter per={per} setPer={setPer} cf={cf} setCf={setCf} ct={ct} setCt={setCt} range={range} n={list.length}/>
+    <div className="space-y-2.5 px-4 py-3 border-b border-line">
+      {qa&&<PeriodFilter per={per} setPer={setPer} cf={cf} setCf={setCf} ct={ct} setCt={setCt} range={range} n={list.length}/>}
       <div className="flex flex-wrap items-center gap-2">
-        <select aria-label={t('team')} value={tm} onChange={e=>setTm(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card"><option value="all">{t('allTeams')}</option>{['A','B','C','D'].map(x=><option key={x} value={x}>{t('team')} {x}</option>)}</select>
-        <Seg opts={[['all',t('all')],['violation',t('stViolation')],['warning',t('stReview')],['passed',t('stPassed')]]} val={st} set={setSt}/>
-        <select aria-label={t('allFlags')} value={ft} onChange={e=>setFt(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs max-w-full bg-card"><option value="all">{t('allFlags')}</option>{FLAG_TYPES.map(f=><option key={f} value={f}>{FLAG_SHORT[lang][f]||flag(f)}</option>)}</select>
-        <div className="relative"><span className="absolute start-2 top-1.5 text-faint"><Ic n="Search" size={13}/></span><input value={aq} onChange={e=>setAq(e.target.value)} placeholder={t('searchPh')} className="rounded-md border border-line bg-card ps-7 pe-2 py-1 text-xs w-60 max-w-full"/></div>
+        {role==='agent'&&!fixedAgent&&<Seg opts={[['mine',t('scMine')],['team',t('scTeam',user.team)]]} val={scope} set={setScope}/>}
+        {qa&&<select aria-label={t('team')} value={tm} onChange={e=>setTm(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card max-w-full"><option value="all">{t('allTeams')}</option>{['A','B','C','D'].map(x=><option key={x} value={x}>{t('team')} {x}</option>)}</select>}
+        <select aria-label={t('queue')} value={qu} onChange={e=>setQu(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card max-w-full"><option value="all">{t('allQueues')}</option>{D.queues.map(x=><option key={x} value={x}>{queue(x)}</option>)}</select>
+        <Seg opts={[['all',t('all')],['res',t('fResolved')],['unres',t('fUnresolved')],['tr',t('fTransferred')]]} val={oc} set={setOc}/>
+        {qa&&<Seg opts={[['all',t('all')],['violation',t('stViolation')],['warning',t('stReview')],['passed',t('stPassed')]]} val={st} set={setSt}/>}
+        {qa&&<select aria-label={t('allFlags')} value={ft} onChange={e=>setFt(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card max-w-full"><option value="all">{t('allFlags')}</option>{FLAG_TYPES.map(f=><option key={f} value={f}>{FLAG_SHORT[lang][f]||flag(f)}</option>)}</select>}
+        {qa&&<div className="relative"><span className="absolute start-2 top-1.5 text-faint"><Ic n="Search" size={13}/></span><input value={aq} onChange={e=>setAq(e.target.value)} placeholder={t('searchPh')} className="rounded-md border border-line bg-card ps-7 pe-2 py-1 text-xs w-60 max-w-full"/></div>}
+        <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer"><input type="checkbox" checked={onlyTx} onChange={e=>setOnlyTx(e.target.checked)}/>{t('onlyTx')}</label>
+        <span className="ms-auto text-xs text-muted">{t('nCalls',fmtN(list.length))}</span>
       </div>
-    </div>}
-    <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b border-line bg-sunken">
-      {role==='agent'&&!fixedAgent&&<Seg opts={[['mine',t('scMine')],['team',t('scTeam',user.team)]]} val={scope} set={setScope}/>}
-      <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer"><input type="checkbox" checked={onlyTx} onChange={e=>setOnlyTx(e.target.checked)}/>{t('onlyTx')}</label>
-      <span className="ms-auto text-xs text-muted">{t('nCalls',fmtN(list.length))}</span>
     </div>
-    {rows.length?<ul className="p-2">{rows.map(r=>{const tx=!!JOBS[r.id];const me=r.agent===user.id&&!fixedAgent;return <li key={r.id+r.time}>
-      <button onClick={()=>onOpen(r)} className="w-full text-start rounded-lg px-3 py-2.5 hover:bg-sunken flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-line last:border-0">
-        <LtrNum className="text-sm font-semibold">{r.time}</LtrNum>
-        <span className="text-sm font-medium">{r.isNew?(he?REASON_HE[r.reason]||r.reason:r.reason):tx?pick(he,AI[r.id],'label'):topic(r.topic)}</span>
-        <span className="text-xs text-muted">{r.isNew?t('newCall'):queue(r.queue)} · <LtrNum>{r.cust||'—'}</LtrNum>{scope!=='mine'&&<> · <span className={me?'font-semibold text-ink':''}>{me?t('pfMe'):`${t('agent')} ${r.agent}`}</span></>}</span>
-        <span className="flex flex-wrap items-center gap-1.5 ms-auto">
-          {qa&&r.status&&(r.flags.length?r.flags.map((f,k)=><Badge key={k} tone={f[0]==='violation'?'violation':'warning'}>{FLAG_SHORT[lang][f[1]]||flag(f[1])}</Badge>):<Badge tone="pass" icon={false}>{t('stPassed')}</Badge>)}
+    {rows.length?<div className="overflow-x-auto scroll-thin"><table className="w-full text-sm min-w-[760px]">
+      <thead><tr className="text-xs text-muted border-b border-line bg-sunken">
+        {[['time',t('colDate')],[null,t('colTime')],['topic',t('colTopic')],['queue',t('colQueue')],['cust',t('colCust')],showAgent&&['agent',t('colAgent')],['dur',t('colDur')],['csat',t('colCsat')],['res',t('colRes')],qa&&['qa',t('colQa')],[null,'']].filter(Boolean).map(([k,h],i)=>
+          <th key={i} className="px-3 py-2 text-start font-semibold whitespace-nowrap" aria-sort={k&&k===sk?(sd>0?'ascending':'descending'):undefined}>
+            {k?<button onClick={()=>sortBy(k)} title={t('sortBy')} className={`inline-flex items-center gap-1 font-semibold hover:text-ink ${k===sk?'text-ink':''}`}>{h}<Ic n={k===sk?(sd>0?'ArrowUp':'ArrowDown'):'ArrowUpDown'} size={12} className={k===sk?'':'opacity-40'}/></button>:h}</th>)}
+      </tr></thead>
+      <tbody>{rows.map(r=>{const tx=!!JOBS[r.id];const me=r.agent===user.id&&!fixedAgent;const td='px-3 py-2.5 whitespace-nowrap';return <tr key={r.id+r.time} onClick={()=>onOpen(r)} tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')onOpen(r)}} className="border-b border-line last:border-0 hover:bg-sunken cursor-pointer">
+        <td className={`${td} font-semibold tnum`}><LtrNum>{dmy(r.time)}</LtrNum></td>
+        <td className={`${td} text-muted tnum`}><LtrNum>{r.time.slice(6)}</LtrNum></td>
+        <td className="px-3 py-2.5"><span className="inline-flex flex-wrap items-center gap-1.5"><span className="font-medium">{r.isNew?(he?REASON_HE[r.reason]||r.reason:r.reason):tx?pick(he,AI[r.id],'label'):topic(r.topic)}</span>
           {r.isNew&&<Badge tone="nba" icon="PhoneIncoming">{t('newCall')}</Badge>}
-          {tx&&<Badge tone="nba" icon="AudioLines">{t('hasTx')}</Badge>}
-          {loggedIds.has(r.id)&&<Badge tone="pass" icon="Check">{t('loggedBadge')}</Badge>}
-          <Badge tone={r.res?'pass':'warning'} icon={false}>{r.res?t('resolvedS'):t('unresolved')}</Badge>
-          {r.tr===1&&<Badge tone="warning" icon="ArrowLeftRight">{t('transferred')}</Badge>}
-          <Ic n="ChevronRight" size={16} className="text-faint rtl:-scale-x-100"/>
-        </span>
-      </button></li>})}</ul>
+          {tx&&<span title={t('hasTx')} aria-label={t('hasTx')} className="text-accent"><Ic n="AudioLines" size={14}/></span>}
+          {loggedIds.has(r.id)&&<span title={t('loggedBadge')} aria-label={t('loggedBadge')} className="text-good"><Ic n="CircleCheck" size={14}/></span>}</span></td>
+        <td className={`${td} text-muted`}>{r.isNew?'—':queue(r.queue)}</td>
+        <td className={`${td} mono text-xs`}><LtrNum>{r.cust||'—'}</LtrNum></td>
+        {showAgent&&<td className={`${td} ${me?'font-semibold':''}`}>{me?t('pfMe'):<span className="mono text-xs">{r.agent}</span>}</td>}
+        <td className={`${td} tnum`}>{r.dur?<LtrNum>{fmtT(r.dur)}</LtrNum>:<span className="text-faint">—</span>}</td>
+        <td className={`${td} tnum`}>{r.csat>0?<LtrNum>{r.csat}/5</LtrNum>:<span className="text-faint">—</span>}</td>
+        <td className={td}><span className="inline-flex items-center gap-1.5"><Badge tone={r.res?'pass':'warning'} icon={false}>{r.res?t('resolvedS'):t('unresolved')}</Badge>
+          {r.tr===1&&<span title={t('transferred')} aria-label={t('transferred')} className="text-warn"><Ic n="ArrowLeftRight" size={14}/></span>}</span></td>
+        {qa&&<td className="px-3 py-2.5"><span className="inline-flex flex-wrap gap-1.5">{r.status?(r.flags.length?r.flags.map((f,k)=><Badge key={k} tone={f[0]==='violation'?'violation':'warning'}>{FLAG_SHORT[lang][f[1]]||flag(f[1])}</Badge>):<Badge tone="pass" icon={false}>{t('stPassed')}</Badge>):<span className="text-faint">—</span>}</span></td>}
+        <td className="px-3 py-2.5 text-end"><Ic n="ChevronRight" size={16} className="text-faint rtl:-scale-x-100"/></td>
+      </tr>})}</tbody></table></div>
       :<div className="p-8 text-sm text-faint text-center">{t('noCallsList')}</div>}
     {pages>1&&<div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-line text-xs text-muted">
       <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={page===0} aria-label={t('prev')} className="rounded-md border border-line px-2 py-1 disabled:opacity-40 inline-flex items-center"><Ic n="ChevronLeft" size={14} className="rtl:-scale-x-100"/></button>
@@ -1930,16 +1965,17 @@ function App(){
   const [mode,setMode]=useState(()=>location.hash?location.hash.slice(1):null); // no hash → the role's default tab
   const [callId,setCallId]=useState('203743');
   const [toast,setToast]=useState(null);
-  const store=useLogStore(); const [openReq,setOpenReq]=useState(null);
+  const store=useLogStore(); const [openReq,setOpenReq]=useState(null); const [searchReq,setSearchReq]=useState(null);
   const [procsSeen,setProcsSeen]=useState(()=>{try{return sessionStorage.getItem('netcom-procs-seen')==='1'}catch(e){return false}});
   const markProcsSeen=()=>{setProcsSeen(true);try{sessionStorage.setItem('netcom-procs-seen','1')}catch(e){}};
   const storeRef=useRef(store); storeRef.current=store;
   const api=useMemo(()=>createApi({persist:rec=>storeRef.current.add(rec)}),[]);
   const go=m=>{setMode(m);try{history.replaceState(null,'','#'+m)}catch(e){}};
   const changeLang=l=>{setLang(l);try{localStorage.setItem('netcom-lang',l)}catch(e){}};
-  const login=id=>{const u=resolveUser(id);setUid(id);setProcsSeen(false);try{sessionStorage.setItem('netcom-user',id);sessionStorage.removeItem('netcom-procs-seen')}catch(e){}
+  const login=id=>{const u=resolveUser(id);setUid(id);setProcsSeen(false);setSearchReq(null);setOpenReq(null);try{sessionStorage.setItem('netcom-user',id);sessionStorage.removeItem('netcom-procs-seen')}catch(e){}
     if(u.role==='manager') go('manager'); else {const own=CALL_IDS.find(c=>ROW_BY_ID[c].agent===u.id);setCallId(own||'203743');go('agent')}};
-  const logout=()=>{setUid('');setToast(null);try{sessionStorage.removeItem('netcom-user');history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
+  const logout=()=>{setUid('');setToast(null);setSearchReq(null);setOpenReq(null); // a new user starts clean: no leftover search or opened call
+   try{sessionStorage.removeItem('netcom-user');history.replaceState(null,'',location.pathname+location.search)}catch(e){}};
   useEffect(()=>{document.documentElement.lang=lang;document.documentElement.dir=lang==='he'?'rtl':'ltr'},[lang]);
   const s=STR[lang];
   const allowed=user?tabsFor(user,s).map(x=>x[0]):[];
@@ -1948,33 +1984,41 @@ function App(){
   const role=user?(user.role==='manager'?s.roleManager:(user.f?s.roleAgentF:s.roleAgent)):'';
   return <LangCtx.Provider value={lang}><LogCtx.Provider value={store}><ApiCtx.Provider value={api}><div className="min-h-screen" dir={lang==='he'?'rtl':'ltr'} lang={lang}>
     <nav className="sticky z-40 bg-nav text-navink gutter" style={{top:'env(safe-area-inset-top,0px)'}}>
-      <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-        <div className="flex items-center gap-2.5 me-auto">
+      {/* brand · tabs on the start side; tools · user on the end side (mirrors itself in Hebrew) */}
+      <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-x-5 gap-y-2 py-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg grid place-items-center" style={{background:'var(--accent)'}}><Ic n="Headset" size={17} className="text-white"/></div>
-          <div className="leading-tight"><div className="text-[15px] font-semibold">Netcom Service Co-Pilot</div><div className="text-[11px]" style={{color:'var(--navmuted)'}}>{s.appSub}</div></div>
+          <div className="leading-tight"><div className="text-[15px] font-semibold">Netcom Service Co-Pilot</div><div className="text-[11px] hidden lg:block" style={{color:'var(--navmuted)'}}>{s.appSub}</div></div>
         </div>
         {user&&<div className="flex rounded-lg p-0.5" style={{background:'rgba(255,255,255,.08)'}} role="tablist">
           {tabsFor(user,s).map(([k,ic,l,sh])=>
             <button key={k} role="tab" aria-selected={view===k} onClick={()=>go(k)} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold transition ${view===k?'bg-card text-ink':'hover:text-white'}`} style={view===k?{}:{color:'var(--navmuted)'}}><Ic n={ic} size={15}/><span className="hidden sm:inline">{l}</span><span className="sm:hidden">{sh}</span></button>)}
         </div>}
-        {user&&<ProcsButton nav highlight={user.role==='agent'&&!procsSeen} onOpen={markProcsSeen}/>}
-        {user&&<div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 shrink-0 rounded-full grid place-items-center text-[13px] font-semibold" style={{background:'rgba(255,255,255,.12)'}}>{user.name[lang].slice(0,1)}</div>
-          <div className="leading-tight min-w-0">
-            <div className="text-[13px] font-semibold truncate">{s.hello(user.name[lang])}</div>
-            <div className="text-[11px] truncate" style={{color:'var(--navmuted)'}}>{role}{user.role==='agent'&&<> · <span className="mono">{user.id}</span> · {s.team} {user.team}</>}</div>
-          </div>
-          <button onClick={logout} title={s.logout} className="ms-1 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold hover:text-white" style={{color:'var(--navmuted)',background:'rgba(255,255,255,.06)'}}><Ic n="LogOut" size={14} className="rtl:-scale-x-100"/><span className="hidden sm:inline">{s.logout}</span></button>
-        </div>}
-        <LangSwitch lang={lang} setLang={changeLang}/>
+        <div className="ms-auto flex items-center gap-2.5">
+          {user&&user.role!=='manager'&&<CustSearch key={user.id} nav onResult={r=>{setSearchReq({r,n:Date.now()});go('agent')}}/>}
+          {user&&<ProcsButton nav highlight={user.role==='agent'&&!procsSeen} onOpen={markProcsSeen}/>}
+          <LangSwitch lang={lang} setLang={changeLang}/>
+          {user&&<>
+            <span aria-hidden="true" className="w-px h-7" style={{background:'rgba(255,255,255,.14)'}}/>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 shrink-0 rounded-full grid place-items-center text-[13px] font-semibold" style={{background:'rgba(255,255,255,.12)'}}>{user.name[lang].slice(0,1)}</div>
+              <div className="leading-tight min-w-0">
+                <div className="text-[13px] font-semibold truncate">{user.name[lang]}</div>
+                <div className="text-[11px] truncate" style={{color:'var(--navmuted)'}}>{role}{user.role==='agent'&&<> · <span className="mono">{user.id}</span> · {s.team} {user.team}</>}</div>
+              </div>
+            </div>
+            <button onClick={logout} title={s.logout} aria-label={s.logout} className="inline-flex items-center justify-center rounded-md w-8 h-8 hover:text-white" style={{color:'var(--navmuted)',background:'rgba(255,255,255,.06)'}}><Ic n="LogOut" size={15} className="rtl:-scale-x-100"/></button>
+          </>}
+        </div>
       </div>
     </nav>
     <main className="gutter py-5"><div className="max-w-[1500px] mx-auto">
       {!user?<Login onLogin={login}/>:<>
-          {view==='manager'&&<Manager openCall={id=>openCall(ROW_BY_ID[id])}/>}
-          {(view==='team'||view==='teams')&&<TeamView key={view} user={user} onOpenCall={openCall}/>}
+          {/* manager screens stay mounted (hidden) so their filters survive tab switches; they reset on sign-out */}
+          {allowed.includes('manager')&&<div hidden={view!=='manager'}><Manager openCall={id=>openCall(ROW_BY_ID[id])}/></div>}
+          {(allowed.includes('teams')||allowed.includes('team'))&&<div hidden={view!=='team'&&view!=='teams'}><TeamView key={user.id} user={user} onOpenCall={openCall}/></div>}
           {/* the workspace stays mounted so a live call survives switching tabs */}
-          <div hidden={view!=='agent'}><AgentWorkspace key={user.id} user={user} callId={callId} setCallId={setCallId} toast={setToast} openReq={openReq}/></div>
+          <div hidden={view!=='agent'}><AgentWorkspace key={user.id} user={user} callId={callId} setCallId={setCallId} toast={setToast} openReq={openReq} searchReq={searchReq}/></div>
           {view==='me'&&<MyPerformance user={user}/>}</>}
       <footer className="mt-6 text-[11px] text-faint">{s.footer}</footer>
     </div></main>
