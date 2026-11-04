@@ -332,6 +332,10 @@ const TK_HE={open:'פתוחה',closed:'סגורה'};
 const CRM_SUM_HE={'Customer charged twice. Ticket opened. Refund within 24h.':'הלקוחה חויבה פעמיים. נפתחה פנייה. החזר תוך 24 שעות.'};
 const planHe=p=>p.replace(/Internet/g,'אינטרנט').replace('TV Full','טלוויזיה מלאה').replace(/\(first-year promotion ended (\S+)\)/,'(הטבת שנה ראשונה הסתיימה ב-$1)');
 const LangCtx=createContext('en');
+Object.assign(STR.en,{readyT:'Ready for the next call',readyTF:'Ready for the next call',
+  readyB:'The Co-Pilot listens to the call, identifies the customer and guides you in real time, based on company procedures.'});
+Object.assign(STR.he,{readyT:'מוכן לשיחה הבאה',readyTF:'מוכנה לשיחה הבאה',
+  readyB:'ה-Co-Pilot מקשיב לשיחה, מזהה את הלקוח ומדריך אותך בזמן אמת לפי נוהלי החברה.'});
 function useT(){const lang=useContext(LangCtx);const t=(k,...a)=>{const v=STR[lang][k]??STR.en[k];return typeof v==='function'?v(...a):v};
   const tr=(map,v)=>lang==='he'?(map[v]||v):v; return {t,lang,he:lang==='he',topic:v=>tr(TOPIC_HE,v),queue:v=>tr(QUEUE_HE,v),flag:v=>tr(FLAG_HE,v),check:v=>tr(CHECK_HE,v)};}
 const pick=(he,obj,key)=>he&&obj[key+'He']!==undefined?obj[key+'He']:obj[key];
@@ -1243,10 +1247,27 @@ function SavedLog({callId}){
   </Card>;
 }
 
+/* agent home: waiting for the next call, with the answer button up front */
+function ReadyCall({user,demo,setDemo,answer,answering}){
+  const {t}=useT();
+  return <div className="bg-card border border-line rounded-xl px-5 py-6 sm:px-8 sm:py-8 flex flex-wrap items-center gap-6">
+    <div className="w-14 h-14 rounded-full grid place-items-center shrink-0" style={{background:'var(--accentsoft)'}}><Ic n="Headset" size={26} className="text-accent"/></div>
+    <div className="flex-1 min-w-[240px]">
+      <div className="text-xl font-semibold">{user.f?t('readyTF'):t('readyT')}</div>
+      <p className="mt-1 text-sm text-muted max-w-[560px] leading-relaxed">{t('readyB')}</p>
+    </div>
+    <div className="flex flex-col items-stretch gap-2">
+      <button onClick={answer} disabled={answering} className="inline-flex items-center justify-center gap-2 rounded-xl bg-good text-white px-7 py-3.5 text-base font-semibold shadow-sm hover:opacity-90 disabled:opacity-70"><Ic n={answering?'LoaderCircle':'Phone'} size={19} className={answering?'animate-spin':''}/>{t('receiveCall')}</button>
+      <label className="flex items-center justify-center gap-2 text-xs text-muted"><span className="whitespace-nowrap">{t('demoScen')}</span>
+        <select value={demo} onChange={e=>setDemo(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card">{DEMO_KEYS.map(k=><option key={k} value={k}>{t('sc_'+k)}</option>)}</select></label>
+    </div>
+  </div>;
+}
+
 function AgentWorkspace({user,callId,setCallId,toast,openReq}){
   const {t,he,queue,topic}=useT();
   const [notes,setNotes]=useState('compact');
-  const [mine,setMine]=useState(()=>user.role==='manager'||(user.role==='agent'&&!CALL_IDS.some(c=>ROW_BY_ID[c].agent===user.id))); const [live,setLive]=useState(null); const [demo,setDemo]=useState('random');
+  const [mine,setMine]=useState(true); /* home: agents land on the ready screen, the manager on all calls */ const [live,setLive]=useState(null); const [demo,setDemo]=useState('random');
   const [res,setRes]=useState(null); const [sel,setSel]=useState(null); const [auto,setAuto]=useState(0);
   const api=useApi(); const meta=ROW_BY_ID[callId];
   // GET the transcript (STT) and the analysis (AI engine) for the open call
@@ -1283,14 +1304,14 @@ function AgentWorkspace({user,callId,setCallId,toast,openReq}){
     <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
       <CustSearch onResult={onResult}/>
       <button onClick={()=>{setMine(true);setRes(null)}} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${mode==='mine'?'bg-accent text-white border-transparent':'border-line bg-card hover:bg-sunken'}`}><Ic n="ListTree" size={15}/>{user.role==='manager'?t('allCalls'):t('myCalls')}</button>
-      {user.role!=='manager'&&<div className="flex flex-wrap items-center gap-2 ms-auto">
+      {user.role!=='manager'&&mode!=='mine'&&<div className="flex flex-wrap items-center gap-2 ms-auto">
         <label htmlFor="demo" className="lbl whitespace-nowrap">{t('demoScen')}</label>
         <select id="demo" value={demo} onChange={e=>setDemo(e.target.value)} className="rounded-lg border border-line px-2.5 py-2 text-sm">{DEMO_KEYS.map(k=><option key={k} value={k}>{t('sc_'+k)}</option>)}</select>
         <button onClick={answer} disabled={answering} className="inline-flex items-center gap-2 rounded-lg bg-good text-white px-4 py-2 text-sm font-semibold hover:opacity-90 disabled:opacity-70"><Ic n={answering?'LoaderCircle':'Phone'} size={16} className={answering?'animate-spin':''}/>{t('receiveCall')}</button>
       </div>}
     </div>
     {res&&!res.fromList&&<ResultBanner res={res} canPick={res.calls.length>=2&&mode!=='pick'} onOther={()=>setSel(null)} onClear={()=>setRes(null)}/>}
-    {mode==='mine'?<MyCalls user={user} onOpen={openRow}/>:
+    {mode==='mine'?<>{user.role!=='manager'&&<ReadyCall user={user} demo={demo} setDemo={setDemo} answer={answer} answering={answering}/>}<MyCalls user={user} onOpen={openRow}/></>:
      mode==='pick'?<CallPicker res={res} onPick={pickRow}/>:
      mode==='cust'?<CustomerView key={res.id} res={res}/>:
      mode==='meta'?<MetaCallView key={sel.row.id} row={sel.row} res={res}/>:<>
