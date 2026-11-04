@@ -812,7 +812,6 @@ function CrmLogger({callId,ai,meta,onLogged,toast}){
         <div><label htmlFor="fu" className="lbl">{t('followUp')}</label>
           <div className="flex gap-2 mt-1"><select id="fu" value={fuType} onChange={e=>setFuType(e.target.value)} className="flex-1 min-w-0 rounded-md border border-line px-2 py-1.5 text-sm"><option value="none">{t('none')}</option>{FU_TYPES.map(k=><option key={k} value={k}>{he?FU_HE[k]:k}</option>)}</select>
           {fuType!=='none'&&<input id="fudue" type="date" value={fuDue} onChange={e=>setFuDue(e.target.value)} className="rounded-md border border-line bg-card px-2 py-1.5 text-sm"/>}</div></div>
-        <label className="flex items-center gap-2 text-xs text-muted"><input id="fail" type="checkbox" checked={fail} onChange={e=>setFail(e.target.checked)}/>{t('simFail')}</label>
         <button onClick={submit} disabled={busy||over||sent||already||!summary} className={`w-full rounded-lg py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2 transition ${sent||already?'bg-goodsoft text-good':'bg-accent text-white hover:opacity-90'} disabled:cursor-not-allowed`}>
           {busy?<><Ic n="LoaderCircle" size={16} className="animate-spin"/>{t('posting')}</>:sent||already?<><Ic n="CircleCheck" size={16}/>{t('loggedBtn')}</>:<><Ic n="Send" size={16} className="rtl:-scale-x-100"/>{t('submit')}</>}</button>
         <div className="text-[11px] text-faint">{t('loggerNote')}</div>
@@ -1292,18 +1291,21 @@ function AgentWorkspace({user,callId,setCallId,toast,openReq}){
   const pickRow=r=>{if(JOBS[r.id]){setSel({k:'tx'});play(r.id)}else setSel({k:'meta',row:r})};
   const mode=mine?'mine':!res?'tx':sel==null?'pick':sel.k;
   // open a call from the agent's list: transcribed → transcript view, otherwise the call-log details
+  const [opening,setOpening]=useState(false); // while the CRM lookup runs, show a loader instead of the previous call
   const openRow=async r=>{setMine(false);
     if(JOBS[r.id]&&!r.isNew){setRes(null);setCallId(r.id);return}
     if(!r.cust) return;
+    setOpening(true);
     try{const c=await findCustomer(api,r.cust);if(!c)return;setRes({...c,fromList:true});setSel(r.isNew?{k:'cust'}:{k:'meta',row:r})}
-    catch(e){toast({tone:'err',title:t('crmTitle'),body:apiErrText(t,e)})}};
+    catch(e){toast({tone:'err',title:t('crmTitle'),body:apiErrText(t,e)})}
+    finally{setOpening(false)}};
   const isNew=mode!=='tx';
-  useEffect(()=>{if(openReq){setLive(null);openRow(openReq.row)}},[openReq&&openReq.n]); // a call opened from another screen
+  useLayoutEffect(()=>{if(openReq){setLive(null);openRow(openReq.row)}},[openReq&&openReq.n]); // before paint, so the previous call never flashes // a call opened from another screen
   if(live) return <LiveCallView key={live.run} live={live} user={user} toast={toast} onClose={()=>setLive(null)}/>;
   return <div className="space-y-4">
     <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
       <CustSearch onResult={onResult}/>
-      <button onClick={()=>{setMine(true);setRes(null)}} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${mode==='mine'?'bg-accent text-white border-transparent':'border-line bg-card hover:bg-sunken'}`}><Ic n="ListTree" size={15}/>{user.role==='manager'?t('allCalls'):t('myCalls')}</button>
+      {mode!=='mine'&&<button onClick={()=>{setMine(true);setRes(null)}} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-2 text-sm font-semibold hover:bg-sunken"><Ic n="ChevronLeft" size={15} className="rtl:-scale-x-100"/>{user.role==='manager'?t('allCalls'):t('myCalls')}</button>}
       {user.role!=='manager'&&mode!=='mine'&&<div className="flex flex-wrap items-center gap-2 ms-auto">
         <label htmlFor="demo" className="lbl whitespace-nowrap">{t('demoScen')}</label>
         <select id="demo" value={demo} onChange={e=>setDemo(e.target.value)} className="rounded-lg border border-line px-2.5 py-2 text-sm">{DEMO_KEYS.map(k=><option key={k} value={k}>{t('sc_'+k)}</option>)}</select>
@@ -1311,7 +1313,9 @@ function AgentWorkspace({user,callId,setCallId,toast,openReq}){
       </div>}
     </div>
     {res&&!res.fromList&&<ResultBanner res={res} canPick={res.calls.length>=2&&mode!=='pick'} onOther={()=>setSel(null)} onClear={()=>setRes(null)}/>}
-    {mode==='mine'?<>{user.role!=='manager'&&<ReadyCall user={user} demo={demo} setDemo={setDemo} answer={answer} answering={answering}/>}<MyCalls user={user} onOpen={openRow}/></>:
+    {/* the list stays mounted (hidden) so its filters survive opening a call */}
+    <div hidden={mode!=='mine'||opening} className="space-y-4">{user.role!=='manager'&&<ReadyCall user={user} demo={demo} setDemo={setDemo} answer={answer} answering={answering}/>}<MyCalls user={user} onOpen={openRow}/></div>
+    {opening?<Card title={t('callDetails')} icon="FileText"><Loading text={t('loadingCust')}/></Card>:mode==='mine'?null:
      mode==='pick'?<CallPicker res={res} onPick={pickRow}/>:
      mode==='cust'?<CustomerView key={res.id} res={res}/>:
      mode==='meta'?<MetaCallView key={sel.row.id} row={sel.row} res={res}/>:<>
@@ -1484,6 +1488,9 @@ function PingPong({rows}){
   </Card>;
 }
 
+// short names for the call-review badges
+const FLAG_SHORT={en:{'No retention offer before cancel':'No retention offer','Repeat in 7d: possible 24h-refund promise':'Possible 24h refund promise','Transferred: line check not confirmed':'Line not checked before transfer','Hold over 4 min':'Hold over 4 min'},
+  he:{'No retention offer before cancel':'ללא הצעת שימור','Repeat in 7d: possible 24h-refund promise':'חשד להבטחת החזר תוך 24 שעות','Transferred: line check not confirmed':'קו לא נבדק לפני העברה','Hold over 4 min':'המתנה מעל 4 דק׳'}};
 const FLAG_TYPES=['No retention offer before cancel','Repeat in 7d: possible 24h-refund promise','Transferred: line check not confirmed','Hold over 4 min'];
 function QATable({rows,openCall}){
   const {t,queue,topic,flag}=useT();
@@ -1504,7 +1511,7 @@ function QATable({rows,openCall}){
     <div className="overflow-x-auto scroll-thin">
       <table className="w-full text-sm min-w-[860px]">
         <thead><tr className="text-start">{t('cols').map((h,i)=><th key={i} className="lbl px-3 py-2 font-semibold border-b border-line text-start">{h}</th>)}</tr></thead>
-        <tbody>{view.map(r=><tr key={r.id} className="border-b border-line hover:bg-sunken">
+        <tbody>{view.map(r=><tr key={r.id} onClick={()=>openCall(r.id)} tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')openCall(r.id)}} className="border-b border-line hover:bg-sunken cursor-pointer">
           <td className="px-3 py-2 mono tnum">{r.id}</td>
           <td className="px-3 py-2 text-xs text-muted tnum whitespace-nowrap"><LtrNum>{r.time}</LtrNum></td>
           <td className="px-3 py-2"><span className="mono">{r.agent}</span> <span className="text-xs text-faint">· {r.team}</span></td>
@@ -1514,7 +1521,7 @@ function QATable({rows,openCall}){
           <td className="px-3 py-2"><div className="flex flex-col gap-0.5">{r.flags.length?r.flags.map((f,i)=><span key={i} className={`text-xs ${f[0]==='violation'?'text-bad':'text-warn'}`}>• {flag(f[1])}</span>):<span className="text-xs text-faint">—</span>}
             {r.flagSrc==='transcript'&&<span className="text-[10px] font-semibold text-accent uppercase tracking-wide">{t('txVerified')}</span>}</div></td>
           <td className="px-3 py-2 tnum">{r.csat>0?r.csat:<span className="text-faint">—</span>}</td>
-          <td className="px-3 py-2">{AI[r.id]&&<button onClick={()=>openCall(r.id)} className="text-xs text-accent inline-flex items-center gap-1 whitespace-nowrap hover:underline">{t('openCall')}<Ic n="ArrowUpRight" size={12} className="rtl:-scale-x-100"/></button>}</td>
+          <td className="px-3 py-2"><span className="text-xs text-accent inline-flex items-center gap-1 whitespace-nowrap">{AI[r.id]?t('openCall'):t('callDetails')}<Ic n="ArrowUpRight" size={12} className="rtl:-scale-x-100"/></span></td>
         </tr>)}</tbody>
       </table>
     </div>
@@ -1654,7 +1661,6 @@ function Manager({openCall}){
         <Retention rows={rows}/><DoubleCharge rows={rows}/><PingPong rows={rows}/>
       </div>
     </Section>
-    <QACollapse rows={rows} openCall={openCall}/>
   </div>;
 }
 
@@ -1783,20 +1789,36 @@ function TeamView({user,onOpenCall}){
 
 /* agent's own calls (or their team's); a lead sees the team; managers see all; fixedAgent = one agent, for leads */
 function MyCalls({user,onOpen,fixedAgent}){
-  const {t,he,lang,queue,topic}=useT(); const {logs}=useContext(LogCtx);
+  const {t,he,lang,queue,topic,flag}=useT(); const {logs}=useContext(LogCtx);
   const role=fixedAgent?'agent':user.role;
+  const qa=role==='manager'; // the manager's call review doubles as the quality-review list
+  const [per,setPer]=useState('30'); const [cf,setCf]=useState(DATA_START); const [ct,setCt]=useState(DATA_END);
+  const [tm,setTm]=useState('all'); const [st,setSt]=useState('all'); const [ft,setFt]=useState('all'); const [aq,setAq]=useState('');
+  const range=periodRange(per,cf,ct);
   const [scope,setScope]=useState(role==='manager'?'all':role==='lead'?'team':'mine'); const [onlyTx,setOnlyTx]=useState(false); const [page,setPage]=useState(0);
   const loggedIds=useMemo(()=>new Set(logs.map(l=>l.call_id)),[logs]);
   const list=useMemo(()=>{
     const match=r=>scope==='all'||(scope==='mine'?r.agent===user.id:r.team===user.team);
-    const base=ROWS.filter(r=>match(r)&&(!onlyTx||JOBS[r.id]));
-    const fresh=onlyTx?[]:logs.filter(l=>l.isNew&&match(l)).map(l=>({id:l.call_id,time:l.time,agent:l.agent,team:l.team,cust:l.cust,res:l.resolved?1:0,tr:0,isNew:true,reason:l.reason_code}));
+    const s=aq.trim().toLowerCase();
+    const qaOk=r=>!qa||((tm==='all'||r.team===tm)&&(!s||(r.agent||'').toLowerCase()===s||String(r.id||r.call_id||'').includes(s)||(r.cust||'').toLowerCase().includes(s)));
+    const base=ROWS.filter(r=>match(r)&&qaOk(r)&&(!onlyTx||JOBS[r.id])&&(!qa||((st==='all'||r.status===st)&&(ft==='all'||r.flags.some(f=>f[1]===ft))&&rowDay(r)>=range.from&&rowDay(r)<=range.to)));
+    // calls logged in this session have no QA status yet; hide them once a status or flag filter is set
+    const fresh=onlyTx||(qa&&(st!=='all'||ft!=='all'))?[]:logs.filter(l=>l.isNew&&match(l)&&qaOk(l)).map(l=>({id:l.call_id,time:l.time,agent:l.agent,team:l.team,cust:l.cust,res:l.resolved?1:0,tr:0,isNew:true,reason:l.reason_code}));
     return [...fresh,...base].sort((a,b)=>b.time.localeCompare(a.time));
-  },[scope,onlyTx,user.id,user.team,logs]);
-  useEffect(()=>setPage(0),[scope,onlyTx]);
+  },[scope,onlyTx,user.id,user.team,logs,qa,tm,st,ft,aq,range.from,range.to]);
+  useEffect(()=>setPage(0),[scope,onlyTx,tm,st,ft,aq,range.from,range.to]);
   const PER=15, pages=Math.max(1,Math.ceil(list.length/PER)), rows=list.slice(page*PER,page*PER+PER);
   const title=fixedAgent?t('agentCalls',user.name[lang]):scope==='mine'?t('myCalls'):scope==='team'?t('teamCalls',user.team):t('allCalls');
   return <Card title={title} icon="ListTree" bodyClass="p-0">
+    {qa&&<div className="space-y-2.5 px-4 py-3 border-b border-line">
+      <PeriodFilter per={per} setPer={setPer} cf={cf} setCf={setCf} ct={ct} setCt={setCt} range={range} n={list.length}/>
+      <div className="flex flex-wrap items-center gap-2">
+        <select aria-label={t('team')} value={tm} onChange={e=>setTm(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs bg-card"><option value="all">{t('allTeams')}</option>{['A','B','C','D'].map(x=><option key={x} value={x}>{t('team')} {x}</option>)}</select>
+        <Seg opts={[['all',t('all')],['violation',t('stViolation')],['warning',t('stReview')],['passed',t('stPassed')]]} val={st} set={setSt}/>
+        <select aria-label={t('allFlags')} value={ft} onChange={e=>setFt(e.target.value)} className="rounded-md border border-line px-2 py-1 text-xs max-w-full bg-card"><option value="all">{t('allFlags')}</option>{FLAG_TYPES.map(f=><option key={f} value={f}>{FLAG_SHORT[lang][f]||flag(f)}</option>)}</select>
+        <div className="relative"><span className="absolute start-2 top-1.5 text-faint"><Ic n="Search" size={13}/></span><input value={aq} onChange={e=>setAq(e.target.value)} placeholder={t('searchPh')} className="rounded-md border border-line bg-card ps-7 pe-2 py-1 text-xs w-60 max-w-full"/></div>
+      </div>
+    </div>}
     <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b border-line bg-sunken">
       {role==='agent'&&!fixedAgent&&<Seg opts={[['mine',t('scMine')],['team',t('scTeam',user.team)]]} val={scope} set={setScope}/>}
       <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer"><input type="checkbox" checked={onlyTx} onChange={e=>setOnlyTx(e.target.checked)}/>{t('onlyTx')}</label>
@@ -1808,6 +1830,7 @@ function MyCalls({user,onOpen,fixedAgent}){
         <span className="text-sm font-medium">{r.isNew?(he?REASON_HE[r.reason]||r.reason:r.reason):tx?pick(he,AI[r.id],'label'):topic(r.topic)}</span>
         <span className="text-xs text-muted">{r.isNew?t('newCall'):queue(r.queue)} · <LtrNum>{r.cust||'—'}</LtrNum>{scope!=='mine'&&<> · <span className={me?'font-semibold text-ink':''}>{me?t('pfMe'):`${t('agent')} ${r.agent}`}</span></>}</span>
         <span className="flex flex-wrap items-center gap-1.5 ms-auto">
+          {qa&&r.status&&(r.flags.length?r.flags.map((f,k)=><Badge key={k} tone={f[0]==='violation'?'violation':'warning'}>{FLAG_SHORT[lang][f[1]]||flag(f[1])}</Badge>):<Badge tone="pass" icon={false}>{t('stPassed')}</Badge>)}
           {r.isNew&&<Badge tone="nba" icon="PhoneIncoming">{t('newCall')}</Badge>}
           {tx&&<Badge tone="nba" icon="AudioLines">{t('hasTx')}</Badge>}
           {loggedIds.has(r.id)&&<Badge tone="pass" icon="Check">{t('loggedBadge')}</Badge>}
