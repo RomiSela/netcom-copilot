@@ -1,0 +1,185 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Netcom Co-Pilot Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans+Hebrew:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (memo), wide tables scroll inside their own frame; numbers in mono */
+:root{
+  --bg:#f6f7f9; --paper:#ffffff; --ink:#16202c; --muted:#57606d; --faint:#8a929d; --line:#dfe3e8;
+  --accent:#2754c5; --accent-soft:#e9eefb; --bad:#b4332f; --bad-soft:#fbecea; --good:#1d7447; --good-soft:#e4f3ea; --warn:#946200; --warn-soft:#faf1dc;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans","IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --paper:#151d27; --ink:#e4e9ef; --muted:#9ea8b4; --faint:#6f7a87; --line:#28323e;
+  --accent:#7d9cf0; --accent-soft:#1c2a45; --bad:#ef7470; --bad-soft:#371b1c; --good:#5cc790; --good-soft:#132d20; --warn:#e1ad48; --warn-soft:#30260f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --paper:#151d27; --ink:#e4e9ef; --muted:#9ea8b4; --faint:#6f7a87; --line:#28323e;
+  --accent:#7d9cf0; --accent-soft:#1c2a45; --bad:#ef7470; --bad-soft:#371b1c; --good:#5cc790; --good-soft:#132d20; --warn:#e1ad48; --warn-soft:#30260f; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--sans);font-size:16px;line-height:1.6;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:44px}
+a{color:var(--accent)} a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(30px,5vw,42px)} h2{font-size:24px} h3{font-size:17px;font-family:var(--sans)}
+p{margin:0;max-width:68ch} .lede{font-size:18px;color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600}
+header{display:flex;flex-direction:column;gap:14px;border-bottom:1px solid var(--line);padding-bottom:28px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:8px 14px;font-weight:600;text-decoration:none;color:var(--ink);font-size:14px}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
+nav.toc a{text-decoration:none;color:var(--muted)} nav.toc a:hover{color:var(--accent)}
+section{display:flex;flex-direction:column;gap:16px;scroll-margin-top:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font-family:var(--mono);font-size:24px;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td strong{font-weight:600}
+.ev{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:8px}
+.ev:first-child{margin-top:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.he{font-family:"IBM Plex Sans Hebrew",var(--sans)}
+code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+ol,ul{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.pill.real{background:var(--good-soft);color:var(--good)} .pill.sim{background:var(--warn-soft);color:var(--warn)} .pill.no{background:var(--bad-soft);color:var(--bad)}
+.note{background:var(--accent-soft);border-radius:10px;padding:14px 16px;font-size:15px;max-width:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.role{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.role p{font-size:14px;color:var(--muted)}
+footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:18px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Sumit AI · Home assignment · November 2026</div>
+  <h1>Netcom Service Co-Pilot</h1>
+  <p class="lede">A working prototype of a real-time AI co-pilot for Netcom’s 60-seat service center. It guides the agent during the call, drafts the CRM log when the call ends, and shows the contact-center manager where broken procedures turn into repeat calls and lost customers.</p>
+  <div class="links">
+    <a class="btn primary" href="index.html">Open the prototype ↗</a>
+    <a class="btn" href="#try">How to try it</a>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#try">Try it</a><a href="#findings">Findings</a><a href="#flow">The flow</a><a href="#decisions">Product decisions</a><a href="#build">Build approach</a><a href="#video">Walkthrough video</a>
+  </nav>
+</header>
+
+<section id="try">
+  <h2>Try the prototype</h2>
+  <p>Sign in with an ID, no password. Switch between Hebrew and English in the top bar. The interface is Hebrew-first; transcripts and CRM summaries are always in Hebrew.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Sign-in ID</th><th>Who</th><th>What you see</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Avi · agent A17, Team B</td><td>Answer calls, live Co-Pilot, CRM log, my calls, my performance</td></tr>
+      <tr><td class="num">A01–A60</td><td>Any agent (A23 = Shiran)</td><td>Same as above, for that agent</td></tr>
+      <tr><td class="num">2</td><td>Noa · contact-center manager (demo user)</td><td>Command center, teams (each agent’s performance and calls), all calls</td></tr>
+    </tbody></table></div>
+  <h3>A three-minute path</h3>
+  <ol>
+    <li>Sign in as <code>1</code>. Pick “Cancellation” as the demo scenario and press <strong>Answer call</strong>. Watch the transcript and the Co-Pilot alert. When the caller gives their ID, press <strong>Open customer card</strong>. End the call and submit the AI-drafted CRM log.</li>
+    <li>Search <code>C60101</code> and open call 203743. The Co-Pilot flags the agent’s promise of a 24-hour bank refund, which breaks billing policy.</li>
+    <li>Open <strong>My performance</strong> to see Avi against his team average.</li>
+    <li>Sign out, sign in as <code>2</code>. The command center opens on four KPIs with their weekly trend, then the three problems, each with a Co-Pilot suggestion.</li>
+    <li>Open <strong>Teams</strong>, pick Team B and open Avi: his numbers, his calls, and the log you just saved.</li>
+  </ol>
+</section>
+
+<section id="findings">
+  <h2>Findings</h2>
+  <p class="note"><strong>Netcom’s procedures already cover all three problems. The damage comes from not following them during the call.</strong></p>
+  <p>Data: 8,921 calls from September 1–30, 2026 (60 agents, 4 teams), 6 speech-to-text transcripts, 5 CRM records and the service policy.</p>
+  <div class="kpis">
+    <div class="kpi"><b>3.37</b><span>Average satisfaction (CSAT), out of 5. 1,740 surveys, 19.5% response.</span></div>
+    <div class="kpi"><b>16.6%</b><span>Of customers called again within 7 days.</span></div>
+    <div class="kpi"><b>40.5%</b><span>Of cancellation calls got the retention offer the policy requires in every case.</span></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Problem</th><th>What the procedure says</th><th>Evidence</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Retention leakage</strong></td>
+        <td>Every cancellation request gets at least one retention offer first.</td>
+        <td><div class="ev">Call data</div>1,273 cancel-intent calls; an offer was made in 516. With an offer 52.1% stayed, without one 11.0%.<div class="ev">Transcripts</div>206654: cancelled with no offer. 206708: kept with TV Lite at ₪45/month.</td>
+        <td>About 312 customers could have stayed in one month (estimate: no-offer calls × the gap in save rate, assuming similar customers).</td></tr>
+      <tr><td><strong>Wrong information on double charges</strong></td>
+        <td>Credit on the next invoice. No bank or card refund from the service center.</td>
+        <td><div class="ev">Call data</div>1,506 calls (16.9% of volume). 26.2% call again within 7 days vs. 14.7% for other topics. CSAT 2.66.<div class="ev">Transcripts</div>203743: agent promises a bank refund in 24 hours. 204773: the same customer’s third call, ending in a cancellation request. The CRM log itself records “Refund within 24h”.</td>
+        <td>One wrong sentence creates two or three more calls and a churn risk.</td></tr>
+      <tr><td><strong>Ping-pong in technical support</strong></td>
+        <td>Check the line before any transfer; remote reset before a technician; priority slot for work-from-home customers offline 24h+.</td>
+        <td><div class="ev">Call data</div>28.9% of technical calls are transferred; average hold 104.5 s. Transferred calls: CSAT 2.82 vs. 3.67, repeat 21.2% vs. 12.9%.<div class="ev">Transcripts</div>206013: transferred without the line check, technician booked without a remote reset, priority slot for a work-from-home customer not offered.</td>
+        <td>Each skipped step adds a transfer, a hold and often a technician visit.</td></tr>
+    </tbody></table></div>
+  <p>The call data shows that outcomes are worse when the procedure is not followed; on its own it cannot prove that this is the cause in every call. The transcripts show the link directly.</p>
+</section>
+
+<section id="flow">
+  <h2>The flow</h2>
+  <p>Two users, two jobs: the agent resolves one call at a time; the contact-center manager makes sure the whole center follows procedure.</p>
+  <div class="grid2">
+    <div class="role"><h3>Agent: handling a call</h3>
+      <ol>
+        <li><strong>Starts the shift</strong> with a quick review of the company procedures.</li>
+        <li><strong>Answers</strong> an incoming call without knowing who is calling.</li>
+        <li><strong>Identifies the customer</strong> by ID number, without reading it back, and sees their plan, tickets and history.</li>
+        <li><strong>Handles the request</strong> following the procedure for that call type: an offer before any cancellation, a credit on the next invoice, a line check before a transfer.</li>
+        <li><strong>Closes the call and logs it</strong>: checks the drafted summary, reason code and follow-up, fixes what is wrong, saves.</li>
+        <li><strong>Between calls</strong>, looks up a customer or a past call, and checks their own results against the team.</li>
+      </ol></div>
+    <div class="role"><h3>Contact-center manager: running the center</h3>
+      <ol>
+        <li><strong>Checks the status</strong>: are volume, satisfaction, repeat calls and retention offers getting better or worse?</li>
+        <li><strong>Finds where it hurts most</strong> in the chosen period, and what to do about it.</li>
+        <li><strong>Looks at a team and an agent</strong> to decide who needs coaching, and on what.</li>
+        <li><strong>Reviews specific calls</strong>: what was said, where procedure broke, and what the agent logged.</li>
+        <li><strong>Acts</strong>: a team briefing, a coaching session, or a process change such as blocking cancellation until an offer is logged.</li>
+      </ol></div>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2>Key product decisions</h2>
+  <ol>
+    <li><strong>Guidance inside the transcript, at the moment it is needed.</strong> During a call the agent reads the conversation, so the procedure reminder appears right after the sentence that triggered it.</li>
+    <li><strong>Answer first, identify from speech.</strong> Calls arrive before anyone knows the caller. The Co-Pilot hears the ID number and opens the customer card, and the number is never read back.</li>
+    <li><strong>The AI drafts the CRM log; the agent approves it.</strong> Logging is mandatory and typed by hand today. The agent checks the draft, keeps their own notes, and saves in one click.</li>
+    <li><strong>The manager page is ordered by business impact.</strong> Status first, then the three problems, each with one number, one chart and one suggested action. Details open on demand.</li>
+    <li><strong>Coaching, not ranking.</strong> Agents see their own results against the team average; the manager sees every agent. Each score shows how many surveys it rests on.</li>
+  </ol>
+</section>
+
+<section id="build">
+  <h2>Build approach and tooling</h2>
+  <p><strong>Approach.</strong> Data first: I analysed the September call log to see where repeat calls and lost customers come from, then read the transcripts and the policy against those numbers to find the cause. Then I designed the two user journeys and built the prototype in short rounds, checking each version in a browser.</p>
+  <p><strong>Tools.</strong> Claude Code for analysis, code and testing · Python for the data analysis · React, Tailwind CSS, Lucide icons and Recharts for the interface · claude.ai Artifacts for hosting and for saving CRM logs.</p>
+  <p><strong>Real vs. mocked.</strong> The interface is real. Netcom’s systems (CRM, speech-to-text, phone system, AI engine) sit behind one API layer that follows <code>integration_spec.md</code>, with mock servers that add realistic latency and the spec’s errors. A real system can replace each mock without changing the screens. The AI analysis of the 6 sample calls is written in advance, and live calls are scripted.</p>
+</section>
+
+<section id="video">
+  <h2>Walkthrough video: a three-minute script</h2>
+  <p>Record the screen in Hebrew mode at desktop width. On Windows, Win + Alt + R starts a recording from the Game Bar; Loom works as well.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Time</th><th>On screen</th><th>What to say</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0:00–0:20</td><td>Sign-in screen</td><td>The problem in three numbers: 40.5% offer rate, 26.2% repeat calls on double charges, 28.9% technical transfers.</td></tr>
+      <tr><td class="num">0:20–1:20</td><td>Sign in as 1, Answer call (Cancellation)</td><td>The alert appears with the offer list; the ID is heard and the card opens; end the call and show the AI draft, then save it.</td></tr>
+      <tr><td class="num">1:20–1:45</td><td>Search C60101, call 203743</td><td>The 24-hour refund promise is flagged in the transcript, and the next call shows its cost.</td></tr>
+      <tr><td class="num">1:45–2:10</td><td>My performance</td><td>Avi against his team: short calls, more repeat calls, and one concrete tip.</td></tr>
+      <tr><td class="num">2:10–2:40</td><td>Sign in as 2, command center</td><td>Four KPIs with their weekly trend, then the three problems by impact, each with a suggested action.</td></tr>
+      <tr><td class="num">2:40–3:00</td><td>Teams, Team B, Avi</td><td>The manager sees each agent against the team, and the log just saved.</td></tr>
+    </tbody></table></div>
+</section>
+
+<footer>Sources: <span class="num">netcom_calls_sep2026.csv</span>, <span class="num">transcripts.json</span>, <span class="num">crm_customers.json</span>, <span class="num">netcom_service_policy.md</span>, <span class="num">integration_spec.md</span>. Figures computed from these files; estimates are labelled.</footer>
+</div>
+
+</body></html>
