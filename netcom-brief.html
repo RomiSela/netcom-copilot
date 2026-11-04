@@ -46,6 +46,7 @@ tr:last-child td{border-bottom:0}
 td strong{font-weight:600}
 .ev{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:8px}
 .ev:first-child{margin-top:0}
+td.grp{background:var(--bg);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-block:6px}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 .he{font-family:"IBM Plex Sans Hebrew",var(--sans)}
 code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
@@ -70,29 +71,9 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
     <a class="btn" href="#try">How to try it</a>
   </div>
   <nav class="toc" aria-label="Sections">
-    <a href="#try">Try it</a><a href="#findings">Findings</a><a href="#flow">The flow</a><a href="#decisions">Product decisions</a><a href="#build">Build approach</a><a href="#video">Walkthrough video</a>
+    <a href="#findings">Findings</a><a href="#goals">Goals</a><a href="#flow">The flow</a><a href="#decisions">Product decisions</a><a href="#build">Build approach</a><a href="#video">Walkthrough video</a><a href="#try">Try it</a>
   </nav>
 </header>
-
-<section id="try">
-  <h2>Try the prototype</h2>
-  <p>Sign in with an ID, no password. Switch between Hebrew and English in the top bar. The interface is Hebrew-first; transcripts and CRM summaries are always in Hebrew.</p>
-  <div class="tbl"><table>
-    <thead><tr><th>Sign-in ID</th><th>Who</th><th>What you see</th></tr></thead>
-    <tbody>
-      <tr><td class="num">1</td><td>Avi · agent A17, Team B</td><td>Answer calls, live Co-Pilot, CRM log, my calls, my performance</td></tr>
-      <tr><td class="num">A01–A60</td><td>Any agent (A23 = Shiran)</td><td>Same as above, for that agent</td></tr>
-      <tr><td class="num">2</td><td>Noa · contact-center manager (demo user)</td><td>Command center, teams (each agent’s performance and calls), all calls</td></tr>
-    </tbody></table></div>
-  <h3>A three-minute path</h3>
-  <ol>
-    <li>Sign in as <code>1</code>. Pick “Cancellation” as the demo scenario and press <strong>Answer call</strong>. Watch the transcript and the Co-Pilot alert. When the caller gives their ID, press <strong>Open customer card</strong>. End the call and submit the AI-drafted CRM log.</li>
-    <li>Search <code>C60101</code> and open call 203743. The Co-Pilot flags the agent’s promise of a 24-hour bank refund, which breaks billing policy.</li>
-    <li>Open <strong>My performance</strong> to see Avi against his team average.</li>
-    <li>Sign out, sign in as <code>2</code>. The command center opens on four KPIs with their weekly trend, then the three problems, each with a Co-Pilot suggestion.</li>
-    <li>Open <strong>Teams</strong>, pick Team B and open Avi: his numbers, his calls, and the log you just saved.</li>
-  </ol>
-</section>
 
 <section id="findings">
   <h2>Findings</h2>
@@ -108,18 +89,38 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
     <tbody>
       <tr><td><strong>Retention leakage</strong></td>
         <td>Every cancellation request gets at least one retention offer first.</td>
-        <td><div class="ev">Call data</div>1,273 cancel-intent calls; an offer was made in 516. With an offer 52.1% stayed, without one 11.0%.<div class="ev">Transcripts</div>206654: cancelled with no offer. 206708: kept with TV Lite at ₪45/month.</td>
+        <td><div class="ev">Call data</div>Offer made in 516 of 1,273. Stayed: 52.1% with an offer, 11.0% without.<div class="ev">Transcripts</div>206654: cancelled with no offer.</td>
         <td>About 312 customers could have stayed in one month (estimate: no-offer calls × the gap in save rate, assuming similar customers).</td></tr>
       <tr><td><strong>Wrong information on double charges</strong></td>
         <td>Credit on the next invoice. No bank or card refund from the service center.</td>
-        <td><div class="ev">Call data</div>1,506 calls (16.9% of volume). 26.2% call again within 7 days vs. 14.7% for other topics. CSAT 2.66.<div class="ev">Transcripts</div>203743: agent promises a bank refund in 24 hours. 204773: the same customer’s third call, ending in a cancellation request. The CRM log itself records “Refund within 24h”.</td>
-        <td>One wrong sentence creates two or three more calls and a churn risk.</td></tr>
+        <td><div class="ev">Call data</div>1,506 calls; 26.2% call again within 7 days (other topics: 14.7%).<div class="ev">Transcripts</div>203743: agent promises a bank refund in 24 hours.</td>
+        <td>Likely cause, seen in the transcripts: one wrong promise leads to two or three more calls and a churn risk.</td></tr>
       <tr><td><strong>Ping-pong in technical support</strong></td>
         <td>Check the line before any transfer; remote reset before a technician; priority slot for work-from-home customers offline 24h+.</td>
-        <td><div class="ev">Call data</div>28.9% of technical calls are transferred; average hold 104.5 s. Transferred calls: CSAT 2.82 vs. 3.67, repeat 21.2% vs. 12.9%.<div class="ev">Transcripts</div>206013: transferred without the line check, technician booked without a remote reset, priority slot for a work-from-home customer not offered.</td>
+        <td><div class="ev">Call data</div>28.9% transferred; after a transfer 21.2% call again (12.9% without).<div class="ev">Transcripts</div>206013: transferred without a line check.</td>
         <td>Each skipped step adds a transfer, a hold and often a technician visit.</td></tr>
     </tbody></table></div>
   <p>The call data shows that outcomes are worse when the procedure is not followed; on its own it cannot prove that this is the cause in every call. The transcripts show the link directly.</p>
+</section>
+
+<section id="goals">
+  <h2>Goals and success metrics</h2>
+  <p><strong>Goal: customers get their problem solved on the first call, and fewer of them leave.</strong> We get there by helping agents follow procedure during the call. The north-star metric is the share of customers who call again within 7 days.</p>
+  <p><strong>Pilot with one team.</strong> The other three teams keep working as today and serve as the control group. This shows that the change comes from the Co-Pilot and not from the season or the call volume, limits the risk while the tool is new, and lets us fix what slows agents down before a wider rollout.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Metric</th><th>Related problem</th><th>Today (Sept 2026)</th><th>After 4 weeks</th><th>After 3 months</th></tr></thead>
+    <tbody>
+      <tr><td colspan="5" class="grp">Customer outcomes</td></tr>
+      <tr><td><strong>Repeat calls within 7 days</strong> (north star)</td><td>All three</td><td class="num">16.6%</td><td class="num">15.5%</td><td class="num">14%</td></tr>
+      <tr><td>Customer satisfaction</td><td>All three</td><td class="num">3.37</td><td class="num">3.5</td><td class="num">3.6</td></tr>
+      <tr><td>Customers who stay after asking to cancel</td><td>Retention leakage</td><td class="num">27.7%</td><td class="num">40%</td><td class="num">48%</td></tr>
+      <tr><td>Repeat calls after a double-charge call</td><td>Double charges</td><td class="num">26.2%</td><td class="num">18%</td><td class="num">15%</td></tr>
+      <tr><td colspan="5" class="grp">Agent behaviour (early signals)</td></tr>
+      <tr><td>Retention offer made before cancellation</td><td>Retention leakage</td><td class="num">40.5%</td><td class="num">80%</td><td class="num">95%</td></tr>
+      <tr><td>Technical calls transferred</td><td>Technical ping-pong</td><td class="num">28.9%</td><td class="num">24%</td><td class="num">20%</td></tr>
+    </tbody></table></div>
+  <p><strong>Why both customer and agent metrics.</strong> The Co-Pilot works through the agent: agent behaviour shows whether it changed what agents do, and customer outcomes show whether that change helps customers. If agents improve but customers don’t, the procedures themselves need another look.</p>
+  <p>If the pilot team meets the 3-month targets, we roll the Co-Pilot out to all teams and set the metrics for center-wide use.</p>
 </section>
 
 <section id="flow">
@@ -177,6 +178,26 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
       <tr><td class="num">2:10–2:40</td><td>Sign in as 2, command center</td><td>Four KPIs with their weekly trend, then the three problems by impact, each with a suggested action.</td></tr>
       <tr><td class="num">2:40–3:00</td><td>Teams, Team B, Avi</td><td>The manager sees each agent against the team, and the log just saved.</td></tr>
     </tbody></table></div>
+</section>
+
+<section id="try">
+  <h2>Try the prototype</h2>
+  <p>Sign in with an ID, no password. Switch between Hebrew and English in the top bar. The interface is Hebrew-first; transcripts and CRM summaries are always in Hebrew.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Sign-in ID</th><th>Who</th><th>What you see</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Avi · agent A17, Team B</td><td>Answer calls, live Co-Pilot, CRM log, my calls, my performance</td></tr>
+      <tr><td class="num">A01–A60</td><td>Any agent (A23 = Shiran)</td><td>Same as above, for that agent</td></tr>
+      <tr><td class="num">2</td><td>Noa · contact-center manager (demo user)</td><td>Command center, teams (each agent’s performance and calls), all calls</td></tr>
+    </tbody></table></div>
+  <h3>A three-minute path</h3>
+  <ol>
+    <li>Sign in as <code>1</code>. Pick “Cancellation” as the demo scenario and press <strong>Answer call</strong>. Watch the transcript and the Co-Pilot alert. When the caller gives their ID, press <strong>Open customer card</strong>. End the call and submit the AI-drafted CRM log.</li>
+    <li>Search <code>C60101</code> and open call 203743. The Co-Pilot flags the agent’s promise of a 24-hour bank refund, which breaks billing policy.</li>
+    <li>Open <strong>My performance</strong> to see Avi against his team average.</li>
+    <li>Sign out, sign in as <code>2</code>. The command center opens on four KPIs with their weekly trend, then the three problems, each with a Co-Pilot suggestion.</li>
+    <li>Open <strong>Teams</strong>, pick Team B and open Avi: his numbers, his calls, and the log you just saved.</li>
+  </ol>
 </section>
 
 <footer>Sources: <span class="num">netcom_calls_sep2026.csv</span>, <span class="num">transcripts.json</span>, <span class="num">crm_customers.json</span>, <span class="num">netcom_service_policy.md</span>, <span class="num">integration_spec.md</span>. Figures computed from these files; estimates are labelled.</footer>
