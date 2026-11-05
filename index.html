@@ -391,7 +391,7 @@ const ApiCtx=createContext(null);
 const useApi=()=>useContext(ApiCtx);
 const REASON_CODES_API=['BILLING','TECH_OUTAGE','TECH_DEVICE','SALES','CANCEL','OTHER'];
 const SCENARIO_QUEUE={dc:'billing',bill:'billing',cancel:'retention',tech:'technical'};
-function createApi({persist}){
+function createApi({persist,isUsed=()=>false}){
   const listeners=new Set(); const log=[]; const flags={fail503:false,expired401:false};
   let nextCallId=Number(NEW_CALL_ID);
   const wait=(a,b)=>new Promise(r=>setTimeout(r,a+Math.random()*(b-a)));
@@ -443,7 +443,7 @@ function createApi({persist}){
   const pbx={
     /** answer the next ringing call (mock: a scripted caller for the chosen demo scenario) */
     answerNextCall:({agentId,scenario})=>request('PBX','POST','/calls/answer',()=>({
-      event:'call.answered',call_id:String(++nextCallId),parent_call_id:null,agent_id:agentId,customer_id:CALLER[scenario],
+      event:'call.answered',call_id:(()=>{do{++nextCallId}while(isUsed(String(nextCallId)));return String(nextCallId)})(), /* skip numbers already logged in an earlier session */parent_call_id:null,agent_id:agentId,customer_id:CALLER[scenario],
       queue:SCENARIO_QUEUE[scenario],scenario,started_at:new Date().toISOString()}),{latency:[300,600],canFail:false}),
     /** the `call.ended` webhook the phone system sends when the call ends */
     hangup:c=>request('PBX','POST',`/calls/${c.call_id}/hangup`,()=>({
@@ -1969,7 +1969,7 @@ function App(){
   const [procsSeen,setProcsSeen]=useState(()=>{try{return sessionStorage.getItem('netcom-procs-seen')==='1'}catch(e){return false}});
   const markProcsSeen=()=>{setProcsSeen(true);try{sessionStorage.setItem('netcom-procs-seen','1')}catch(e){}};
   const storeRef=useRef(store); storeRef.current=store;
-  const api=useMemo(()=>createApi({persist:rec=>storeRef.current.add(rec)}),[]);
+  const api=useMemo(()=>createApi({persist:rec=>storeRef.current.add(rec),isUsed:id=>storeRef.current.logs.some(l=>l.call_id===id)}),[]);
   const go=m=>{setMode(m);try{history.replaceState(null,'','#'+m)}catch(e){}};
   const changeLang=l=>{setLang(l);try{localStorage.setItem('netcom-lang',l)}catch(e){}};
   const login=id=>{const u=resolveUser(id);setUid(id);setProcsSeen(false);setSearchReq(null);setOpenReq(null);try{sessionStorage.setItem('netcom-user',id);sessionStorage.removeItem('netcom-procs-seen')}catch(e){}
