@@ -323,7 +323,7 @@ Object.assign(STR.he,{
 });
 const TOPIC_HE={'TV no signal':'אין קליטה בטלוויזיה','bill higher than expected':'חשבון גבוה מהצפוי','cancel service':'ביטול שירות','double charge':'חיוב כפול','internet down':'אין אינטרנט','new line':'קו חדש','other':'אחר','payment method update':'עדכון אמצעי תשלום','refund status':'סטטוס החזר','router setup':'הגדרת ראוטר','slow internet':'אינטרנט איטי','upgrade package':'שדרוג חבילה'};
 const QUEUE_HE={billing:'גבייה',technical:'תמיכה טכנית',retention:'שימור',sales:'מכירות'};
-const FLAG_HE={'No retention offer before cancel':'לא הוצעה הצעת שימור לפני ביטול','Repeat in 7d: possible 24h-refund promise':'שיחה חוזרת תוך 7 ימים: ייתכן שהובטח החזר תוך 24 שעות','Transferred: line check not confirmed':'הועבר: בדיקת קו לא אומתה','Hold over 4 min':'המתנה מעל 4 דקות','Promised 24h bank refund':'הובטח החזר לבנק תוך 24 שעות','Account discussed before ID check':'פרטי חשבון נדונו לפני אימות ת.ז.','Customer misinformed on prior call':'הלקוחה קיבלה מידע שגוי בשיחה קודמת','Transferred without line check':'הועבר ללא בדיקת קו','No remote reset before technician':'לא בוצע איפוס מרחוק לפני טכנאי','WFH priority slot not offered':'לא הוצע חלון עדיפות לעובד מהבית'};
+const FLAG_HE={'No retention offer before cancel':'לא הוצעה הצעת שימור לפני ביטול','Repeat in 7d: possible 24h-refund promise':'חיוב כפול, התקשרו שוב תוך 7 ימים','Transferred: line check not confirmed':'הועבר: בדיקת קו לא אומתה','Hold over 4 min':'המתנה מעל 4 דקות','Promised 24h bank refund':'הובטח החזר לבנק תוך 24 שעות','Account discussed before ID check':'פרטי חשבון נדונו לפני אימות ת.ז.','Customer misinformed on prior call':'הלקוחה קיבלה מידע שגוי בשיחה קודמת','Transferred without line check':'הועבר ללא בדיקת קו','No remote reset before technician':'לא בוצע איפוס מרחוק לפני טכנאי','WFH priority slot not offered':'לא הוצע חלון עדיפות לעובד מהבית'};
 const CHECK_HE={Identification:'זיהוי','Billing accuracy':'דיוק בגבייה','Retention offer':'הצעת שימור','Tech protocol':'נוהל טכני'};
 const REASON_HE={BILLING:'גבייה',TECH_OUTAGE:'תקלה – אין שירות',TECH_DEVICE:'תקלה בציוד',SALES:'מכירות',CANCEL:'ביטול',OTHER:'אחר'};
 const FU_TYPES=['callback','technician_visit','team_lead_note'];
@@ -344,6 +344,12 @@ Object.assign(STR.en,{endCallFirstT:'A call is in progress',endCallFirstB:'Finis
 Object.assign(STR.he,{endCallFirstT:'יש שיחה פעילה',endCallFirstB:'סיימו קודם את השיחה הנוכחית ואז חפשו.'});
 Object.assign(STR.en,{colDate:'Date',colTime:'Time',colTopic:'Topic',colQueue:'Queue',colCust:'Customer',colAgent:'Agent',colDur:'Length',colCsat:'Satisfaction',colRes:'Result',colQa:'Procedures'});
 Object.assign(STR.he,{colDate:'תאריך',colTime:'שעה',colTopic:'נושא',colQueue:'תור',colCust:'לקוח',colAgent:'נציג',colDur:'אורך',colCsat:'שביעות רצון',colRes:'תוצאה',colQa:'נהלים'});
+Object.assign(STR.en,{dcTitle:'Repeat calls after double charges',
+  dcWhy2:(n,r,o)=>`${n} double-charge calls in this period. ${r}% of these customers called again within 7 days, vs. ${o}% on other topics. The cause is not clear yet: in one sample call the agent promised a bank refund within 24h, against policy. Customers may also not know that the credit only appears on the next invoice.`,
+  dcDo2:()=>'Make sure every customer leaves the call knowing when the credit will appear, with an SMS confirmation. The Co-Pilot already reminds the agent during the call. Review a sample of calls to find out why customers call back.'});
+Object.assign(STR.he,{dcTitle:'שיחות חוזרות אחרי חיוב כפול',
+  dcWhy2:(n,r,o)=>`${n} שיחות על חיוב כפול בתקופה הזו. ${r}% מהלקוחות האלה התקשרו שוב תוך 7 ימים, לעומת ${o}% בשאר הנושאים. הסיבה עוד לא ברורה: בשיחה אחת מהמדגם הנציג הבטיח החזר לבנק תוך 24 שעות, בניגוד לנוהל. ייתכן גם שהלקוחות לא יודעים שהזיכוי מופיע רק בחשבונית הבאה.`,
+  dcDo2:()=>'לוודא שכל לקוח יוצא מהשיחה כשהוא יודע מתי יופיע הזיכוי, עם אישור ב-SMS. ה-Co-Pilot כבר מזכיר את זה לנציג בזמן השיחה. לבדוק מדגם שיחות כדי להבין למה לקוחות חוזרים.'});
 function useT(){const lang=useContext(LangCtx);const t=(k,...a)=>{const v=STR[lang][k]??STR.en[k];return typeof v==='function'?v(...a):v};
   const tr=(map,v)=>lang==='he'?(map[v]||v):v; return {t,lang,he:lang==='he',topic:v=>tr(TOPIC_HE,v),queue:v=>tr(QUEUE_HE,v),flag:v=>tr(FLAG_HE,v),check:v=>tr(CHECK_HE,v)};}
 const pick=(he,obj,key)=>he&&obj[key+'He']!==undefined?obj[key+'He']:obj[key];
@@ -1504,8 +1510,8 @@ function PingPong({rows}){
 }
 
 // short names for the call-review badges
-const FLAG_SHORT={en:{'No retention offer before cancel':'No retention offer','Repeat in 7d: possible 24h-refund promise':'Possible 24h refund promise','Transferred: line check not confirmed':'Line not checked before transfer','Hold over 4 min':'Hold over 4 min'},
-  he:{'No retention offer before cancel':'ללא הצעת שימור','Repeat in 7d: possible 24h-refund promise':'חשד להבטחת החזר תוך 24 שעות','Transferred: line check not confirmed':'קו לא נבדק לפני העברה','Hold over 4 min':'המתנה מעל 4 דק׳'}};
+const FLAG_SHORT={en:{'No retention offer before cancel':'No retention offer','Repeat in 7d: possible 24h-refund promise':'Double charge, called again','Transferred: line check not confirmed':'Line not checked before transfer','Hold over 4 min':'Hold over 4 min'},
+  he:{'No retention offer before cancel':'ללא הצעת שימור','Repeat in 7d: possible 24h-refund promise':'חיוב כפול עם שיחה חוזרת','Transferred: line check not confirmed':'קו לא נבדק לפני העברה','Hold over 4 min':'המתנה מעל 4 דק׳'}};
 const FLAG_TYPES=['No retention offer before cancel','Repeat in 7d: possible 24h-refund promise','Transferred: line check not confirmed','Hold over 4 min'];
 function QATable({rows,openCall}){
   const {t,queue,topic,flag}=useT();

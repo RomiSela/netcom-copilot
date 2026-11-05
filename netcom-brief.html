@@ -72,7 +72,7 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
     <a class="btn" href="#try">How to try it</a>
   </div>
   <nav class="toc" aria-label="Sections">
-    <a href="#findings">Findings</a><a href="#goals">Goals</a><a href="#flow">The flow</a><a href="#decisions">Product decisions</a><a href="#build">Build approach</a><a href="#video">Walkthrough video</a><a href="#try">Try it</a>
+    <a href="#findings">Findings</a><a href="#goals">Goals</a><a href="#flow">The flow</a><a href="#decisions">Product decisions</a><a href="#risks">Risks</a><a href="#build">Build approach</a><a href="#video">Walkthrough video</a><a href="#try">Try it</a>
   </nav>
 </header>
 
@@ -92,16 +92,16 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
         <td>Every cancellation request gets at least one retention offer first.</td>
         <td><div class="ev">Call data</div>Offer made in 516 of 1,273. Stayed: 52.1% with an offer, 11.0% without.<div class="ev">Transcripts</div>206654: cancelled with no offer.</td>
         <td>About 312 customers could have stayed in one month (estimate: no-offer calls × the gap in save rate, assuming similar customers).</td></tr>
-      <tr><td><strong>Wrong information on double charges</strong></td>
+      <tr><td><strong>Repeat calls after double charges</strong></td>
         <td>Credit on the next invoice. No bank or card refund from the service center.</td>
-        <td><div class="ev">Call data</div>1,506 calls; 26.2% call again within 7 days (other topics: 14.7%).<div class="ev">Transcripts</div>203743: agent promises a bank refund in 24 hours.</td>
-        <td>Likely cause, seen in the transcripts: one wrong promise leads to two or three more calls and a churn risk.</td></tr>
+        <td><div class="ev">Call data</div>1,506 calls; 26.2% call again within 7 days (other topics: 14.7%); satisfaction 2.66 (other topics: 3.53).<div class="ev">Transcripts</div>203743: agent promises a bank refund in 24 hours; the customer calls back (204773).</td>
+        <td>394 repeat calls a month from the least satisfied customers. The cause is still open: one wrong promise so far, and customers may not know the credit only appears on the next invoice.</td></tr>
       <tr><td><strong>Ping-pong in technical support</strong></td>
         <td>Check the line before any transfer; remote reset before a technician; priority slot for work-from-home customers offline 24h+.</td>
         <td><div class="ev">Call data</div>28.9% transferred; after a transfer 21.2% call again (12.9% without).<div class="ev">Transcripts</div>206013: transferred without a line check.</td>
         <td>Each skipped step adds a transfer, a hold and often a technician visit.</td></tr>
     </tbody></table></div>
-  <p>The call data shows that outcomes are worse when the procedure is not followed; on its own it cannot prove that this is the cause in every call. The transcripts show the link directly.</p>
+  <p>The call data shows that outcomes are worse when the procedure is not followed; on its own it cannot prove that this is the cause in every call. The transcripts show examples of the link.</p>
 </section>
 
 <section id="goals">
@@ -130,20 +130,17 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
   <div class="grid2">
     <div class="role"><h3>Agent: handling a call</h3>
       <ol>
-        <li><strong>Starts the shift</strong> with a quick review of the company procedures.</li>
-        <li><strong>Answers</strong> an incoming call without knowing who is calling.</li>
-        <li><strong>Identifies the customer</strong> by ID number, without reading it back, and sees their plan, tickets and history.</li>
-        <li><strong>Handles the request</strong> following the procedure for that call type: an offer before any cancellation, a credit on the next invoice, a line check before a transfer.</li>
-        <li><strong>Closes the call and logs it</strong>: checks the drafted summary, reason code and follow-up, fixes what is wrong, saves.</li>
-        <li><strong>Between calls</strong>, looks up a customer or a past call, and checks their own results against the team.</li>
+        <li><strong>Answers</strong> a call without knowing who is calling; the customer card opens once they say their ID.</li>
+        <li><strong>Handles the request</strong> with the procedure for that call type shown at the right moment.</li>
+        <li><strong>Closes and logs the call</strong>: checks the AI draft, fixes what is wrong, saves.</li>
+        <li><strong>Between calls</strong>, looks up past calls and checks their results against the team.</li>
       </ol></div>
     <div class="role"><h3>Contact-center manager: running the center</h3>
       <ol>
-        <li><strong>Checks the status</strong>: are volume, satisfaction, repeat calls and retention offers getting better or worse?</li>
-        <li><strong>Finds where it hurts most</strong> in the chosen period, and what to do about it.</li>
-        <li><strong>Looks at a team and an agent</strong> to decide who needs coaching, and on what.</li>
-        <li><strong>Reviews specific calls</strong>: what was said, where procedure broke, and what the agent logged.</li>
-        <li><strong>Acts</strong>: a team briefing, a coaching session, or a process change such as blocking cancellation until an offer is logged.</li>
+        <li><strong>Checks the status</strong>: are satisfaction, repeat calls and retention offers getting better or worse?</li>
+        <li><strong>Finds where it hurts most</strong>, with a suggested action.</li>
+        <li><strong>Drills into a team, an agent or a call</strong> to see where procedure broke.</li>
+        <li><strong>Acts</strong>: a team briefing, coaching, or a process change.</li>
       </ol></div>
   </div>
 </section>
@@ -157,6 +154,15 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
     <li><strong>The manager page is ordered by business impact.</strong> Status first, then the three problems, each with one number, one chart and one suggested action. Details open on demand.</li>
     <li><strong>Coaching, not ranking.</strong> Agents see their own results against the team average; the manager sees every agent. Each score shows how many surveys it rests on.</li>
   </ol>
+</section>
+
+<section id="risks">
+  <h2>Risks to watch</h2>
+  <ul>
+    <li><strong>Alert fatigue.</strong> Too many prompts and agents stop reading them. Alerts appear only at procedure moments, and the pilot tracks how often agents act on them.</li>
+    <li><strong>Hebrew speech-to-text accuracy</strong>, especially for spoken numbers such as ID numbers. The agent confirms the match before the card opens and can always type the ID.</li>
+    <li><strong>Privacy.</strong> Calls are recorded and ID numbers are spoken. The ID is masked on screen and never read back; transcripts should follow the same retention rules as recordings.</li>
+  </ul>
 </section>
 
 <section id="build">
@@ -182,13 +188,11 @@ footer{font-size:13px;color:var(--faint);border-top:1px solid var(--line);paddin
       <tr><td class="num">A01–A60</td><td>Any agent (A23 = Shiran)</td><td>Same as above, for that agent</td></tr>
       <tr><td class="num">2</td><td>Noa · contact-center manager (demo user)</td><td>Command center, teams (each agent’s performance and calls), all calls</td></tr>
     </tbody></table></div>
-  <h3>A three-minute path</h3>
+  <h3>A quick path</h3>
   <ol>
-    <li>Sign in as <code>1</code>. Pick “Cancellation” as the demo scenario and press <strong>Answer call</strong>. Watch the transcript and the Co-Pilot alert. When the caller gives their ID, press <strong>Open customer card</strong>. End the call and submit the AI-drafted CRM log.</li>
-    <li>Search <code>C60101</code> and open call 203743. The Co-Pilot flags the agent’s promise of a 24-hour bank refund, which breaks billing policy.</li>
-    <li>Open <strong>My performance</strong> to see Avi against his team average.</li>
-    <li>Sign out, sign in as <code>2</code>. The command center opens on four KPIs with their weekly trend, then the three problems, each with a Co-Pilot suggestion.</li>
-    <li>Open <strong>Teams</strong>, pick Team B and open Avi: his numbers, his calls, and the log you just saved.</li>
+    <li>Sign in as <code>1</code> and press <strong>Answer call</strong>. When the caller gives their ID, open the customer card. End the call and save the AI-drafted log.</li>
+    <li>Search <code>C60101</code> and open call 203743 to see a broken billing procedure flagged in the transcript.</li>
+    <li>Sign in as <code>2</code>: the command center, then <strong>Teams</strong> → Team B → Avi, with the log you just saved.</li>
   </ol>
 </section>
 
